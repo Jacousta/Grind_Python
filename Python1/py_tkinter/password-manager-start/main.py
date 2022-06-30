@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
@@ -44,9 +45,25 @@ def data_write():
     else:
         is_ok = messagebox.askyesno(title=website_input.get(),
                                     message=f"These are the details you enter \n EMAIL:{email_input.get()}\nPASSWORD:{password_input.get()}:")
+        new_data = {
+            website_input.get(): {
+                "email": email_input.get(),
+                "password": password_input.get(),
+
+            }
+        }
         if is_ok:
-            with open("data.txt", mode="a") as data:
-                data.write(f"{website_input.get()} | {email_input.get()} | {password_input.get()} \n")
+            try:
+                with open("data.json", mode="r") as data_file:
+                    data = json.load(data_file)
+            except FileNotFoundError:
+                with open("data.json", mode="w") as data_file:
+                    data = new_data
+                    json.dump(data, data_file, indent=4)
+            else:
+                data.update(new_data)
+            with open("data.json", mode="w") as data_file:
+                json.dump(data, data_file, indent=4)
                 website_input.delete(0, END)
                 password_input.delete(0, END)
         else:
@@ -54,7 +71,15 @@ def data_write():
             password_input.delete(0, END)
 
 
-# ---------------------------- UI SETUP ------------------------------- #
+def data_reader():
+    with open("data.json", "r") as read_file:
+        loaded_file = json.load(read_file)
+        if website_input.get() in loaded_file:
+            messagebox.showinfo(title="Your info", message=f"Email: {loaded_file[website_input.get()]['email']}\n" 
+                                                           f" Password: {loaded_file[website_input.get()]['password']}")
+        else:
+            messagebox.showinfo(message="ERROR 69")
+        # ---------------------------- UI SETUP ------------------------------- #
 
 
 window = Tk()
@@ -86,10 +111,13 @@ password_label.grid(row=5, column=1)
 password_input = Entry(window, width=25)
 password_input.grid(row=5, column=2)
 
-password_button = Button(text="Generate Password", width=11,command=password_generate)
+password_button = Button(text="Generate Password", width=11, command=password_generate)
 password_button.grid(row=5, column=3)
 
 add_button = Button(text="Add", width=38, command=data_write)
 add_button.grid(row=6, column=2, columnspan=3)
+
+search_button = Button(text="Search", width=11,command=data_reader)
+search_button.grid(row=3, column=3)
 
 window.mainloop()
